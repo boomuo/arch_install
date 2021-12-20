@@ -152,3 +152,178 @@ sudo nano /ect/mkinitcpio.conf
 MODULES=(crc32c libcrc32c zlib_deflate btrfs nvidia nvidia_modeset nvidia_uvm nvidia_drm)
 
 sudo mkinitcpio -P
+
+
+
+
+
+
+
+
+
+===1== Установка yay===
+
+1) git clone https://aur.archlinux.org/yay.git 
+
+2) makepkg -sric
+
+
+===2== Установка Nvidia DKMS модулей=== 
+
+
+1)  yay nvidia-dkms-performance
+
+
+===3== Включение OpenGL===
+
+ 1) pacman -S
+
+ Для intel -  xf86-video-intel
+
+ Для AMD  - xf86-video-ati
+ 
+ Для Nvidia -  xf86-video-nouveau
+ 
+
+2) sudo -i
+
+3) echo "MESA_GL_VERSION_OVERRIDE=4.5" >> /etc/environment 
+
+4) echo "MESA_GLSL_VERSION_OVERRIDE=450" >> /etc/environment
+ 
+    
+===4== Установка менеджеров управления графикой Nvidia или гибритной графикой=== 
+  
+  --Nvidia Optimus manager-- 
+
+1) yay optimus-manager
+   
+2) sudo systemctl enable optimus-manager.service
+
+3) sudo systemctl start optimus-manager.service
+
+
+  --Nvidia settings-- 
+
+1) pacman -S nvidia-settings 
+
+
+===5== Установка демонов оптимизации===
+
+--Если слабый компьютер с 1гигиабйтом озу устанавливаем  Nohang - следит за потреблением озу
+
+1) git clone https://aur.archlinux.org/nohang-git.git
+
+2)  cd nohang-git
+
+3)  makepkg -sric  
+
+4)  sudo systemctl enable --now nohang-desktop 
+
+
+--Демон управляющий приоритетом распределения ресусов между задачами Ananicy
+
+
+1) git clone https://aur.archlinux.org/ananicy-git.git 
+
+2) cd ananicy-git
+
+3) makepkg -sric
+
+4) sudo systemctl enable ananicy 
+
+
+=== Включаем службу Trim файловой системы (предназначена восновоном для SSD и может не работать на HDD)===
+
+1) sudo systemctl enable fstrim.timer
+
+2) sudo fstrim -v /  (зпустить трим вручную) 
+
+3) если предыдущая не сработала используй эту  sudo fstrim -va / 
+
+
+=== Буст частоты процессора ===
+
+ Поднимает частоту  процессора за счет включения  более производительного профиля процессора 
+
+1) sudo pacman -S cpupower
+
+2) sudo cpupower frequency-set -g performance
+ 
+ Но это работает до перезагрузки , поэтому добавляем сервис автозапуска 
+
+
+3) sudo nano /etc/systemd/system/cpupower.service
+
+
+там пишем 
+
+[Unit]
+Description=Set CPU governor to performance
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/cpupower -c all frequency-set -g performance
+
+
+[Install]
+WantedBy=multi-user.target
+
+4) sudo systemctl enable cpupower.service
+
+
+
+==Графическое меню  Cpupower-gui== 
+
+1) git clone https://aur.archlinux.org/cpupower-gui.git 
+
+2) cd cpupower-gui
+
+2) makepkg -sric 
+
+
+=== Оптимизация загрузки системы , следующими параметрами ===
+
+1) sudo nano /etc/default/grub
+
+добавить туда это 
+
+quiet loglevel=0 rd.systemd.show_status=auto rd.udev.log_level=0 splash rootfstype=btrfs selinux=0 lpj=3499912 raid=noautodetect noibrs noibpb no_stf_barrier tsx=on tsx_async_abort=off elevator=noop mitigations=off
+
+Внимание ! 
+
+rootfstype=btrfs  это для btrfs , сюда указать свою фс если у вас не btrfs 
+
+
+сохранить , выйти и сконфигурировать граб командой 
+
+grub-mkconfig -o /boot/grub/grub.cfg
+
+
+=== Парамертры оптимизации SSD ===
+
+1) nano /etc/fstab
+
+туда добавить
+
+ rw,relatime,ssd,ssd_spread,space_cache=v2,max_inline=256,commit=600,nodatacow
+
+
+=== Установка Stacer и Xdman ===
+
+ -- Установка Stacer --
+
+1) git clone https://aur.archlinux.org/stacer-bin.git
+
+2) cd stacer-bin 
+
+3) makepkg -sric
+
+
+ -- Установка Xdman --
+
+1) git clone https://aur.archlinux.org/xdman.git
+
+2) cd xdman 
+
+3) makepkg -sric
