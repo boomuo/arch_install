@@ -1,0 +1,154 @@
+
+1)Разметка диска 
+ 
+31M  /dev/sdx1 Bios boot 
+300M /dev/sdx2 Efy system 
+512M  /dev/sdx3 swap   ( свап создаем только если меньше 2 gb оперативной памяти )
+free space /dev/sdx4 root
+
+2)Форматирование диска
+
+mkfs.vfat /dev/sdx2  (раздел Efi system) 
+mkfs.btrfs /dev/sdx4 (раздел root)
+mkswap  /dev/sdx3 (раздел swap )
+swapon /dev/sdx3  (включить swap)
+
+3)  монтирование разделов 
+
+mount /dev/sdx3 /mnt  (монтруем корневой или root )
+mkdir /mnt/boot (cозаем каталог для загрузчика - если обычный BIOS )
+
+если UEFI вводим еще одну команду
+mkdir /mnt/boot/EFI
+
+mount /dev/sdx2 /mnt/boot (монтируем Efi system бут раздел для обычного Bios )
+
+mount /dev/sdx2 /mnt/boot/EFi ( дял UEFI биоса )
+
+4) установка базовой системы 
+
+
+pacstrap -i /mnt base base-devel linux-zen linux-zen-headers linux-firmware dosfstools btrfs-progs intel-ucode iucode-tool nano  
+
+5) Генерация конфига разделов 
+
+genfstab -U /mnt >> /mnt/etc/fstab
+
+6) переход в chroot
+
+arch-chroot /mnt
+
+7) Часовой пояс
+
+ln -sf /usr/share/zoneinfo/Регион/Город /etc/localtime
+
+hwclock --systohc
+
+8) Локализация
+
+nano /etc/locale.gen   убрать решетки с нужных локалей  . английский обязательно !
+
+например 
+
+en_US.UTF-8 UTF-8
+ru_RU.UTF-8 UTF-8
+
+потом генерируем локали 
+
+locale-gen
+
+далее редактируем 
+
+nano /etc/locale.conf
+туда это
+
+LANG=ru_RU.UTF-8
+
+
+потом точно также редактируем vconsole
+
+/etc/locale.conf
+
+LANG=ru_RU.UTF-8
+
+9) Настройка сети
+
+nano /etc/hostname   (Имя компьютера)
+
+
+далее файл доменных имен 
+
+nano /etc/hosts
+
+
+127.0.0.1	localhost
+::1		localhost
+127.0.1.1	моёимякомпьютера.localdomain	моёимякомпьютера
+
+10) Initramfs
+
+mkinitcpio -p linux-zen (если ядер несколько )
+
+mkinitcpio -P linux-zen  (если ядро одно)
+
+
+11)  Пароль суперпользователя
+
+passwd
+
+12) Устанавливаем загрузчик и сетевые утилиты 
+
+pacman -S grub efibootmgr dhcpcd dhclient networkamanager git wget
+
+устанавливаем загрузчик 
+
+grub-install /dev/sdx    (загрузчик ставим НЕ на раздел , а на диск на котором ставим систему )
+
+grub-mkconfig -o /boot/grub/grub.cfg  (конфигурируем загрузчик ) 
+
+
+потом 
+
+exit 
+
+
+umount -R /mnt 
+
+
+логинимся в систему создаем учетную запись юзера 
+
+
+useradd -m -G wheel -s /bin/bash юзернейм 
+
+passwd юзернейм 
+
+
+nano /etc/sudoers  раскоменчиваем строку как показано в ролике
+
+
+
+
+
+# видеопакеты ускорения
+sudo pacman -S nvidia-dkms nvidia-utils lib32-nvidia-utils nvidia-settings opencl-nvidia lib32-opencl-nvidia vulkan-icd-loader lib32-vulkan-icd-loader libxnvctrl
+sudo pacman -S lib32-mesa vulkan-intel lib32-vulkan-intel vulkan-icd-loader lib32-vulkan-icd-loader libva-intel-driver xf86-video-intel
+
+# или вместо nvidia оптимизированные DKMS модули проприетарного драйвера NVIDIA
+sudo pacman -S vulkan-icd-loader lib32-vulkan-icd-loader libxnvctrl
+git clone https://aur.archlinux.org/nvidia-dkms-performance.git
+cd nvidia-dkms-performance
+makepkg -sric  ( там соглашаемся с заменой пакета )
+sudo mkinitcpio -p наименование вашего ядра 
+reboot 
+
+# визуальная оболочка
+sudo pacman -S xorg xorg-server plasma  plasma-wayland-session  egl-wayland sddm sddm-kcm packagekit-qt5 kde-applications 
+sudo systemctl enable sddm 
+
+
+# добавить модули файловой системы и видео
+sudo nano /ect/mkinitcpio.conf
+
+MODULES=(crc32c libcrc32c zlib_deflate btrfs nvidia nvidia_modeset nvidia_uvm nvidia_drm)
+
+sudo mkinitcpio -P
