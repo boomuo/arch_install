@@ -1,0 +1,1 @@
+grub efibootmgr dhcpcd dhclient networkamanager git wget vulkan-icd-loader lib32-vulkan-icd-loader libxnvctrl lib32-mesa vulkan-intel lib32-vulkan-intel vulkan-icd-loader lib32-vulkan-icd-loader libva-intel-driver xf86-video-intel xorg xorg-server plasma  plasma-wayland-session  egl-wayland sddm sddm-kcm packagekit-qt5 kde-applications
